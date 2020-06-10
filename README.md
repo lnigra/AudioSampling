@@ -10,6 +10,8 @@ Basic audio recording and playback on Arduino UNO
  * PROGRAM FUNCTION:
  * Measure the raw sampling interval while recording without using 
  * interrupts.
+ *
+ * SD Card function is provided by a basic SD card Shield using CS on Pin 10
  * 
  * The 3.3V output is connected to A0 only to have something known to
  * sample.
