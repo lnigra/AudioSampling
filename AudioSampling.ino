@@ -60,8 +60,8 @@
 File myFile;
 int csPin = 10;
 int analogInPin = A0;
-unsigned int val, deltaT;
-unsigned long timer;
+unsigned int val;
+unsigned long timer, deltaT;
 byte data[4];
 const int bufferLen = 128;
 const int numBytesPerPoint = 4;
