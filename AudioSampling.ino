@@ -18,12 +18,15 @@
  * The AD is sampled, the 10-bit result is converted to two bytes and
  * stored little-ended (per WAV file standard) to the file.
  * 
- * Time between samples is measured as deltaT and is also stored
- * as two bytes little-ended prior to the audio data.
+ * Time between samples is measured as deltaT and is printed out
+ * as each sample is stored, but its maximum value is maintained to
+ * be reported at the end of the program as two bytes little-ended 
+ * prior to the audio data.
  * 
- * After the recording loop, the file is read and deltaT and Sample
- * bytes are converted to int and printed out.maxDeltaT is found
- * during this process and printed out at the end.
+ * After the recording loop, the file is read and sample
+ * byte pairs are converted back to original int values and printed
+ * out. maxDeltaT is found during this process and printed out at 
+ * the end.
  * 
  */
 
@@ -43,7 +46,7 @@
  ** MOSI - pin 11
  ** MISO - pin 12
  ** CLK - pin 13
- ** CS - pin 10 (for MKRZero SD: SDCARD_SS_PIN)
+ ** CS - pin 10 (Arduino) BUILTIN_SDCARD constant (Teensy 3.5-6)
 
  created   Nov 2010
  by David A. Mellis
@@ -57,16 +60,13 @@
 #include <SPI.h>
 #include <SD.h>
 
-File myFile;
-int csPin = 10;
-int analogInPin = A0;
+const int csPin = 10;
+const int analogInPin = A0;
+const int bytesPerValue = 2;
 unsigned int val;
-unsigned long timer, deltaT;
-byte data[4];
-const int bufferLen = 128;
-const int numBytesPerPoint = 4;
-int buffer[bufferLen * numBytesPerPoint ];
-int bufferPntr, dataPntr;
+unsigned long timer, deltaT, maxDeltaT, numSamp;
+byte data[2];
+File myFile;
 
 void setup() {
   // Open serial communications and wait for port to open:
@@ -100,39 +100,34 @@ void setup() {
   val = 0;
   data[0] = 0;
   data[1] = 0;
-  data[2] = 0;
-  data[3] = 0;
+  maxDeltaT = 0;
+  numSamp = 200000;
 }
 
 void loop() {
-  for ( unsigned long i = 0 ; i < 100000 ; i++ ) {
+  for ( unsigned long i = 0 ; i < numSamp ; i++ ) {
     timer = micros();
     if ( i < 2 ) {
       analogRead( A0 );
-      myFile.write( data, 4 );
+      myFile.write( data, 2 );
       myFile.seek( 0 );
     } else {
       val = analogRead( A0 );
-      data[0] = lowByte( deltaT );
-      data[1] = highByte( deltaT );
-      data[2] = lowByte( val );
-      data[3] = highByte( val );
-      myFile.write( data, 4 );
+      data[0] = lowByte( val );
+      data[1] = highByte( val );
+      myFile.write( data, bytesPerValue );
+      deltaT = micros() - timer;
+      Serial.println( deltaT );
+      if ( deltaT > maxDeltaT ) maxDeltaT = deltaT;
     }
-    deltaT = (unsigned int)( micros() - timer );
   }
   myFile.close();
   Serial.println( "Done sampling. Reading file." );
   myFile = SD.open( "test.txt" );
-  int maxDeltaT = 0;
   if( myFile ) {
     Serial.println( "test.txt opened" );
     while( myFile.available() ) {
-      deltaT = (unsigned int)myFile.read() + (unsigned int)myFile.read() * 256;
-      Serial.print( deltaT, DEC );
-      Serial.print( " " );
       Serial.println( (unsigned int)myFile.read() + (unsigned int)myFile.read() * 256, DEC );
-      if ( deltaT > maxDeltaT ) maxDeltaT = deltaT;
     } 
   } else {
     Serial.println( "Error opening file" );
@@ -140,10 +135,4 @@ void loop() {
   Serial.print( "Max delta T:" );Serial.println( maxDeltaT );
   myFile.close();
   while( true );
-}
-
-void readData() {
-  data[dataPntr] = analogRead( A0 );
-  dataPntr = ( dataPntr + 1 ) % bufferLen;
-  
 }
