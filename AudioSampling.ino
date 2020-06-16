@@ -71,10 +71,7 @@ File myFile;
 void setup() {
   // Open serial communications and wait for port to open:
   Serial.begin(115200);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
-  
+  delay( 1000 ); // while ( !Serial ); for teensy. 
   Serial.print("Initializing SD card...");
   if ( !SD.begin( csPin ) ) {
     Serial.println("initialization failed!");
@@ -83,15 +80,15 @@ void setup() {
     exit(0);
   }
   Serial.println("initialization done.");
-  SD.remove( "test.txt" );
+  SD.remove( "test.dat" );
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
-  myFile = SD.open("test.txt", FILE_WRITE ); // O_WRITE for seek to work
+  myFile = SD.open("test.dat", FILE_WRITE ); // O_WRITE for seek to work
   //myFile.seek( 0 );
   // if the file opened okay, write to it:
   if (!myFile) {
     // if the file didn't open, print an error:
-    Serial.println("error opening test.txt");
+    Serial.println("error opening test.dat");
     Serial.println("Ending program");
     Serial.flush();
     exit(0);
@@ -123,9 +120,9 @@ void loop() {
   }
   myFile.close();
   Serial.println( "Done sampling. Reading file." );
-  myFile = SD.open( "test.txt" );
+  myFile = SD.open( "test.dat" );
   if( myFile ) {
-    Serial.println( "test.txt opened" );
+    Serial.println( "test.dat opened" );
     while( myFile.available() ) {
       Serial.println( (unsigned int)myFile.read() + (unsigned int)myFile.read() * 256, DEC );
     } 
